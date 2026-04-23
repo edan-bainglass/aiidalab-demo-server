@@ -1,4 +1,3 @@
-{%- set LOCAL = (environ('LOCAL') or 'false')|lower == 'true' -%}
 {%- set STAGING = (environ('K8S_NAMESPACE') or 'production') == 'staging' -%}
 {%- set INCLUDE_POLICIES = (environ('INCLUDE_POLICIES') or 'false')|lower == 'true' -%}
 {%- set INCLUDE_QE = (environ('INCLUDE_QE') or 'false')|lower == 'true' -%}
@@ -6,10 +5,10 @@
 {%- set PYTHON_VERSION = (environ('PYTHON_VERSION') or '3.9') -%}
 {%- set DEPLOYMENT = (environ('DEPLOYMENT') or 'Demo') -%}
 {%- set SUBTITLE = (environ('SUBTITLE') or 'A pre-configured environment for exploring AiiDAlab') -%}
-{%- set CPU_GUARANTEE = (environ('CPU_GUARANTEE') or ('0.25' if LOCAL else '1.5')) -%}
-{%- set CPU_LIMIT = (environ('CPU_LIMIT') or ('0.5' if LOCAL else '2')) -%}
-{%- set MEMORY_GUARANTEE = (environ('MEMORY_GUARANTEE') or ('512M' if LOCAL else '5G')) -%}
-{%- set MEMORY_LIMIT = (environ('MEMORY_LIMIT') or ('1G' if LOCAL else '5G')) -%}
+{%- set CPU_GUARANTEE = (environ('CPU_GUARANTEE') or '1.5') -%}
+{%- set CPU_LIMIT = (environ('CPU_LIMIT') or '2') -%}
+{%- set MEMORY_GUARANTEE = (environ('MEMORY_GUARANTEE') or '5G') -%}
+{%- set MEMORY_LIMIT = (environ('MEMORY_LIMIT') or '5G') -%}
 {%- set INSTITUTION_LOGO_SRC = (environ('INSTITUTION_LOGO_SRC') or '') -%}
 {%- set INSTITUTION_LOGO_HREF = (environ('INSTITUTION_LOGO_HREF') or '') -%}
 {%- set INSTITUTION_LOGO_ALT = (environ('INSTITUTION_LOGO_ALT') or '') -%}
@@ -22,26 +21,18 @@
 ---
 jupyterhub:
     proxy:
-        {%- if LOCAL %}
-        service:
-            type: NodePort
-            nodePorts:
-                http: 32080
-        {%- endif %}
         https:
-            enabled: {{ 'false' if LOCAL else 'true' }}
-            {%- if not LOCAL %}
+            enabled: true
             hosts:
                 - {{ 'staging-demo' if STAGING else 'demo' }}.aiidalab.io
             letsencrypt:
                 contactEmail: aiidalab@materialscloud.org
-            {%- endif %}
 
     singleuser:
         image:
-            name: {{ IMAGE }}
-            tag: {{ IMAGE_TAG }}
-            pullPolicy: {{ 'IfNotPresent' if LOCAL else 'Always' }}
+            name: ghcr.io/edan-bainglass/hamburg-tutorial
+            tag: dev
+            pullPolicy: Always
         cmd:
             - start-singleuser.sh
         extraEnv:
@@ -92,7 +83,7 @@ jupyterhub:
             timeoutSeconds: 5 # Timeout for the probe check
         db:
             pvc:
-                storageClassName: {{ 'standard' if LOCAL else 'default' }}
+                storageClassName: default
                 storage: 1Gi
         extraConfig:
             customTemplateVars: |
